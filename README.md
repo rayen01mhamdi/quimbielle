@@ -1,212 +1,225 @@
-\# Quimbielle
+# Quimbielle
 
+Digital autofill platform for Tunisian commercial paper forms (**Kambiale / Lettre de Change**).
 
+Quimbielle allows users to fill, manage, and export Kambiale forms digitally while preserving the layout of official paper documents.
 
-A digital autofill platform for Tunisian commercial paper forms (Kambiale / Lettre de Change).
+---
 
+## Prerequisites
 
+Before getting started, ensure the following software is installed:
 
-\## Prerequisites
+* Node.js 20+
+* pnpm 8+
+* PostgreSQL 16+ (running on port 5432)
 
+---
 
+## Installation
 
-\- Node.js v20+
-
-\- pnpm v8+
-
-\- PostgreSQL 16+ (running on port 5432)
-
-
-
-\## Quickstart
-
-
-
-\### 1. Clone and install
-
-
+### 1. Clone the repository
 
 ```bash
-
-git clone https://github.com/YOUR\_USERNAME/quimbielle.git
-
+git clone https://github.com/YOUR_USERNAME/quimbielle.git
 cd quimbielle
-
-pnpm install
-
-pnpm approve-builds
-
-pnpm install
-
 ```
 
-
-
-\### 2. Environment variables
-
-
-
-Create `.env` in `apps/api/`:
-
-DATABASE\_URL="postgresql://postgres:postgres@localhost:5432/quimbielle"
-
-
-
-JWT\_SECRET="your-long-random-secret"
-
-\### 3. Database setup
-
-
+### 2. Install dependencies
 
 ```bash
+pnpm install
+pnpm approve-builds
+pnpm install
+```
 
+---
+
+## Environment Configuration
+
+Create a `.env` file inside `apps/api/`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/quimbielle"
+JWT_SECRET="your-long-random-secret"
+```
+
+---
+
+## Database Setup
+
+Navigate to the API application and initialize the database:
+
+```bash
 cd apps/api
 
 npx prisma migrate dev --name init
-
 npx prisma generate
-
 ```
 
+---
 
+## Kambiale Form Template
 
-\### 4. Add the Kambiale form image
+Place the blank Kambiale form image at:
 
-
-
-Place the blank Kambiale form scan at:
-
+```text
 apps/web/public/kambiale.png
+```
 
-\### 5. Run the project
+This image is used as the base template for form editing and PDF generation.
 
+---
 
+## Running the Application
 
-Open two terminals:
+Start the backend and frontend in separate terminals.
 
-
-
-Terminal 1 — API:
+### Terminal 1 — API Server
 
 ```bash
-
 cd apps/api
-
 pnpm dev
-
 ```
 
+The API will be available at:
 
-
-Terminal 2 — Web:
-
-```bash
-
-cd apps/web
-
-pnpm dev
-
+```text
+http://localhost:3000
 ```
 
-
-
-Open http://localhost:5173 in your browser.
-
-
-
-\## Running tests
-
-
+### Terminal 2 — Web Application
 
 ```bash
-
 cd apps/web
+pnpm dev
+```
 
+The frontend will be available at:
+
+```text
+http://localhost:5173
+```
+
+Open the URL above in your browser to access the application.
+
+---
+
+## Running Tests
+
+Frontend tests can be executed with:
+
+```bash
+cd apps/web
 pnpm test
-
 ```
 
+---
 
+## Creating an Administrator Account
 
-\## Creating an admin account
-
-
-
-After registering, use Prisma Studio to set isAdmin to true:
-
-
+1. Register a user account through the application.
+2. Open Prisma Studio:
 
 ```bash
-
 cd apps/api
-
 npx prisma studio
-
 ```
 
+3. Open:
 
+```text
+http://localhost:5555
+```
 
-Open http://localhost:5555, click User, find your account, set isAdmin to true, save.
+4. Select the `User` table.
+5. Locate your account.
+6. Change the `isAdmin` field to `true`.
+7. Save the record.
 
+---
 
+## Project Structure
 
-\## Project structure
-
+```text
 quimbielle/
-
-
-
 ├── apps/
-
-
-
-│   ├── api/          # Express + Prisma backend (port 3000)
-
-
-
-│   └── web/          # React + Vite frontend (port 5173)
-
-
-
+│   ├── api/              # Express + Prisma backend
+│   └── web/              # React + Vite frontend
+│
 └── packages/
+    ├── types/            # Shared TypeScript types
+    ├── pdf/              # PDF generation utilities
+    └── config/           # Shared configuration
+```
 
+---
 
+## Features
 
-├── types/        # Shared TypeScript types
+* JWT authentication
 
+  * User registration
+  * Login
+  * Logout
 
+* Interactive Kambiale editor
 
-├── pdf/          # PDF generation logic
+  * Draggable fields
+  * Resizable fields
+  * Precise positioning
 
+* PDF generation
 
+  * Coordinate-based field mapping
+  * Printable output
 
-└── config/       # Shared config
+* Form management
 
-\## Features
+  * Saved form history
+  * Pagination support
 
+* Data validation
 
+  * RIB modulo-97 validation
+  * Date validation
+  * Amount validation
 
-\- JWT authentication (register, login, logout)
+* Administration tools
 
-\- Kambiale form overlay with draggable/resizable fields
+  * User management
+  * Access to all submitted forms
 
-\- PDF export with precise coordinate mapping
+---
 
-\- Form history with pagination
+## Known Limitations
 
-\- Field validation (RIB modulo-97, date format, amount)
+* Print calibration may require adjustment for different printers.
+* PDF positioning can vary depending on printer margins and scaling settings.
+* Arabic text rendering requires additional font configuration for optimal output.
 
-\- Admin panel (users + all forms)
+---
 
+## Technology Stack
 
+### Frontend
 
-\## Known limitations
+* React
+* TypeScript
+* Vite
 
+### Backend
 
+* Express
+* Prisma ORM
+* PostgreSQL
 
-\- Print calibration requires manual measurement per printer
+### Authentication
 
-\- PDF coordinates may need adjustment depending on printer margins
+* JWT (JSON Web Tokens)
 
-\- Arabic text rendering in PDF requires additional font configuration
+---
 
+## License
+
+Specify your project's license here (MIT, Apache-2.0, Proprietary, etc.).
