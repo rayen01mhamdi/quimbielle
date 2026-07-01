@@ -3,6 +3,7 @@ import cors from "cors"
 import authRouter from "./routes/auth"
 import formsRouter from "./routes/forms"
 import adminRouter from "./routes/admin"
+import settingsRouter from "./routes/settings"
 import { authenticate, AuthRequest } from "./middleware/authenticate"
 import { prisma } from "./lib/prisma"
 
@@ -17,7 +18,7 @@ app.use(express.json())
 app.use("/auth", authRouter)
 app.use("/api/forms", formsRouter)
 app.use("/api/admin", adminRouter)
-
+app.use("/api/settings", settingsRouter)
 // Fix §1.6 — return DB user not JWT payload
 app.get("/api/me", authenticate, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({

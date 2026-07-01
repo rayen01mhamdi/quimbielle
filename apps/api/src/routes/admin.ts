@@ -5,26 +5,27 @@ import { prisma } from "../lib/prisma"
 
 const router = Router()
 
-// GET /api/admin/users — all users
 router.get("/users", authenticate, requireAdmin, async (_req, res: Response) => {
   const users = await prisma.user.findMany({
-    select: { id: true, email: true, name: true, isAdmin: true, createdAt: true },
+    select: {
+      id: true, email: true, name: true, isAdmin: true, createdAt: true,
+      _count: { select: { forms: true } }
+    },
     orderBy: { createdAt: "desc" },
   })
   res.json(users)
 })
 
-// GET /api/admin/forms — all forms from all users
 router.get("/forms", authenticate, requireAdmin, async (req: AuthRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1
   const limit = parseInt(req.query.limit as string) || 20
-  const forms = await prisma.formRecord.findMany({
+  const forms = await prisma.form.findMany({
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * limit,
     take: limit,
     include: { user: { select: { email: true, name: true } } },
   })
-  const total = await prisma.formRecord.count()
+  const total = await prisma.form.count()
   res.json({ forms, total, page, pages: Math.ceil(total / limit) })
 })
 
