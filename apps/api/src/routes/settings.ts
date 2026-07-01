@@ -1,29 +1,25 @@
 import { Router, Response } from "express"
 import { authenticate, AuthRequest } from "../middleware/authenticate"
-import { prisma } from "../lib/prisma"
+import { getSettings, updateSettings } from "../services/settings.service"
 
 const router = Router()
 
 router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
-  let settings = await prisma.userSettings.findUnique({
-    where: { userId: req.user!.userId }
-  })
-  if (!settings) {
-    settings = await prisma.userSettings.create({
-      data: { userId: req.user!.userId }
-    })
+  try {
+    const settings = await getSettings(req.user!.userId)
+    res.json(settings)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
   }
-  res.json(settings)
 })
 
 router.patch("/", authenticate, async (req: AuthRequest, res: Response) => {
-  const { inkColor, fontSize, pdfMode, xOffset, yOffset } = req.body
-  const settings = await prisma.userSettings.upsert({
-    where: { userId: req.user!.userId },
-    update: { inkColor, fontSize, pdfMode, xOffset, yOffset },
-    create: { userId: req.user!.userId, inkColor, fontSize, pdfMode, xOffset, yOffset },
-  })
-  res.json(settings)
+  try {
+    const settings = await updateSettings(req.user!.userId, req.body)
+    res.json(settings)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 export default router
