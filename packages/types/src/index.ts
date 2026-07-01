@@ -1,25 +1,54 @@
 export type ApiResponse<T> = { data: T; error?: never } | { data?: never; error: string }
 
-export const formFieldKeys = [
-  "signatureTire", "echeance1", "lieuA", "ribTire", "montant1",
-  "tireur", "ordrePayer", "protestable", "montant2",
-  "montantLettre", "montantLettreAr", "lieuCreation", "dateCreation",
-  "echeance2", "nomCedant", "codesReserves", "ribTireur",
-  "valeurEn", "qte", "domiciliation", "nomAdresseTire",
-  "acceptation", "aval", "signatureTireur"
-] as const
+export type ValidationErrors = { [key: string]: string }
 
-export type FormFieldKey = typeof formFieldKeys[number]
+export function validateForm(values: Record<string, string>): ValidationErrors {
+  const errors: ValidationErrors = {}
 
-export type FieldPosition = {
-  key: FormFieldKey
-  left: number
-  top: number
-  width: number
-  height: number
-}
+  if (!values.ordrePayer || values.ordrePayer.trim().length < 2) {
+    errors.ordrePayer = "Le beneficiaire est requis."
+  }
 
-export type FormSavePayload = {
-  values: Record<FormFieldKey, string | boolean>
-  positions: FieldPosition[]
+  if (!values.montant1) {
+    errors.montant1 = "Le montant est requis."
+  } else if (isNaN(parseFloat(values.montant1)) || parseFloat(values.montant1) <= 0) {
+    errors.montant1 = "Le montant doit etre un nombre positif."
+  }
+
+  if (values.echeance1) {
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/
+    const match = values.echeance1.match(dateRegex)
+    if (!match) {
+      errors.echeance1 = "Format de date invalide (JJ/MM/AAAA)."
+    } else {
+      const [, day, month, year] = match
+      const date = new Date(`${year}-${month}-${day}`)
+      if (isNaN(date.getTime())) {
+        errors.echeance1 = "Date invalide."
+      }
+    }
+  }
+
+  if (values.ribTireur) {
+    const rib = values.ribTireur.replace(/\s/g, "")
+    if (!/^\d{20}$/.test(rib)) {
+      errors.ribTireur = "Le RIB doit contenir 20 chiffres."
+    } else {
+      const digits = rib.slice(0, 18)
+      const key = parseInt(rib.slice(18, 20))
+      let remainder = 0
+      for (const d of digits) remainder = (remainder * 10 + parseInt(d)) % 97
+      const expected = 97 - remainder
+      if (key !== expected) errors.ribTireur = "Cle RIB invalide (modulo-97)."
+    }
+  }
+
+  if (values.ribTire) {
+    const rib = values.ribTire.replace(/\s/g, "")
+    if (!/^\d{20}$/.test(rib)) {
+      errors.ribTire = "Le RIB doit contenir 20 chiffres."
+    }
+  }
+
+  return errors
 }

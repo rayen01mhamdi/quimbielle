@@ -1,6 +1,7 @@
 import { Router, Response } from "express"
 import { authenticate, AuthRequest } from "../middleware/authenticate"
 import { prisma } from "../lib/prisma"
+import { validateForm } from "@quimbielle/types"
 
 const router = Router()
 
@@ -8,6 +9,10 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
   const { values, positions } = req.body
   if (!values || typeof values !== "object") {
     return res.status(400).json({ error: "Invalid form body." })
+  }
+  const errors = validateForm(values)
+  if (Object.keys(errors).length > 0) {
+    return res.status(400).json({ error: "Validation failed.", details: errors })
   }
   const form = await prisma.formRecord.create({
     data: { userId: req.user!.userId, values, positions: positions || [] },

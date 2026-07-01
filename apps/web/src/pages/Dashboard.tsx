@@ -1,12 +1,21 @@
-import { useState, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useRef, useEffect } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
-import { jsPDF } from "jspdf"
-import { validateForm } from "../hooks/useValidation"
+import { generateFilledPDF, numToFr, numToAr } from "@quimbielle/pdf"
+
+interface FieldPosition {
+  key: string
+  label?: string
+  left: number
+  top: number
+  width: number
+  height: number
+}
+import { validateForm } from "@quimbielle/types"
 
 type ValidationErrors = { [key: string]: string }
 
-const INITIAL_FIELDS = [
+const INITIAL_FIELDS: FieldPosition[] = [
   { key: "signatureTire",   label: "Signature du tiré",              left: 2.0,  top: 13.0, width: 23.0, height: 17.0 },
   { key: "echeance1",       label: "Échéance",                       left: 47.0, top: 13.0, width: 9.0,  height: 4.5 },
   { key: "lieuA",           label: "A (lieu)",                       left: 75.5, top: 13.0, width: 12.0, height: 4.5 },
@@ -33,19 +42,42 @@ const INITIAL_FIELDS = [
   { key: "signatureTireur", label: "Signature du tireur",            left: 82.0, top: 78.0, width: 16.0, height: 7.0 },
 ]
 
-type Field = typeof INITIAL_FIELDS[number]
-
 export default function Dashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [values, setValues] = useState<Record<string, string>>({})
-  const [fields, setFields] = useState<Field[]>(INITIAL_FIELDS)
+  const [fields, setFields] = useState<FieldPosition[]>(INITIAL_FIELDS)
   const [editMode, setEditMode] = useState(true)
   const [activeKey, setActiveKey] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<ValidationErrors>({})
   const containerRef = useRef<HTMLDivElement>(null)
-  const dragInfo = useRef<{ key: string; mode: "move" | "resize"; startX: number; startY: number; orig: Field } | null>(null)
+  const dragInfo = useRef<{ key: string; mode: "move" | "resize"; startX: number; startY: number; orig: FieldPosition } | null>(null)
+
+  // Fix §1.3 — load form when reopening from history
+  useEffect(() => {
+    const formId = searchParams.get("formId")
+    if (!formId) return
+    const token = localStorage.getItem("token")
+    setLoading(true)
+    fetch(`http://localhost:3000/api/forms/${formId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.values) setValues(data.values)
+        if (data.positions && data.positions.length > 0) {
+          setFields(prev => prev.map(f => {
+            const saved = data.positions.find((p: FieldPosition) => p.key === f.key)
+            return saved ? { ...f, ...saved } : f
+          }))
+        }
+        setEditMode(false)
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleLogout = () => { logout(); navigate("/login") }
 
@@ -89,17 +121,27 @@ export default function Dashboard() {
     window.removeEventListener("mouseup", stopDrag)
   }
 
+  // Fix §4.6 — cleanup drag listeners on unmount
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("mousemove", onDrag)
+      window.removeEventListener("mouseup", stopDrag)
+    }
+  }, [])
+
   const exportPDF = () => {
-    const doc = new jsPDF({ unit: "cm", format: [17.5, 11.5] })
-    doc.setFontSize(8)
-    fields.forEach(f => {
-      const val = values[f.key] || ""
-      if (!val) return
-      const x = (f.left / 100) * 17.5
-      const y = (f.top / 100) * 11.5 + 0.35
-      doc.text(val, x, y)
-    })
+    const doc = generateFilledPDF(values, fields)
     doc.save("kambiale.pdf")
+  }
+
+  const autoLettres = () => {
+    const amount = parseFloat(values.montant1)
+    if (isNaN(amount)) return
+    const intPart = Math.floor(amount)
+    const decPart = Math.round((amount - intPart) * 1000)
+    const fr = numToFr(intPart) + " dinars" + (decPart > 0 ? " et " + numToFr(decPart) + " millimes" : "")
+    const ar = numToAr(intPart) + " دينار" + (decPart > 0 ? " و" + numToAr(decPart) + " مليم" : "")
+    setValues(prev => ({ ...prev, montantLettre: fr, montantLettreAr: ar }))
   }
 
   const saveDraft = async () => {
@@ -126,13 +168,24 @@ export default function Dashboard() {
 
   const active = fields.find(f => f.key === activeKey)
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f4f6fb" }}>
+        <div style={{ fontSize: 14, color: "#8892b0" }}>Chargement du formulaire...</div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#f4f6fb" }}>
       <div style={{ background: "#fff", borderBottom: "1px solid #dde2f0", padding: "0 32px", height: 52, display: "flex", alignItems: "center", gap: 16 }}>
         <span style={{ fontWeight: 800, fontSize: 16, color: "#1a1f36" }}>Quim<span style={{ color: "#5b5ef4" }}>bielle</span></span>
         <span style={{ flex: 1 }} />
         <button onClick={() => navigate("/history")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>Historique</button>
-        <span style={{ fontSize: 13, color: "#8892b0" }}>Bienvenue, {user?.userId?.slice(0, 8)}</span>
+        {user?.isAdmin && (
+          <button onClick={() => navigate("/admin")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #5b5ef4", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#5b5ef4" }}>Admin</button>
+        )}
+        <span style={{ fontSize: 13, color: "#8892b0" }}>Bienvenue, {user?.name || user?.userId?.slice(0, 8)}</span>
         <button onClick={handleLogout} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>Déconnexion</button>
       </div>
 
@@ -147,6 +200,9 @@ export default function Dashboard() {
           </button>
           <button onClick={saveDraft} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#4a5580", cursor: "pointer" }}>
             {saved ? "✓ Enregistré" : "Enregistrer"}
+          </button>
+          <button onClick={autoLettres} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#4a5580", cursor: "pointer" }}>
+            🔤 Auto-lettres
           </button>
           <button onClick={exportPDF} style={{ padding: "8px 18px", background: "#1a1f36", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer" }}>
             ⬇ Exporter PDF

@@ -2,8 +2,9 @@ import express from "express"
 import cors from "cors"
 import authRouter from "./routes/auth"
 import formsRouter from "./routes/forms"
-import { authenticate, AuthRequest } from "./middleware/authenticate"
 import adminRouter from "./routes/admin"
+import { authenticate, AuthRequest } from "./middleware/authenticate"
+import { prisma } from "./lib/prisma"
 
 const app = express()
 
@@ -17,8 +18,17 @@ app.use("/auth", authRouter)
 app.use("/api/forms", formsRouter)
 app.use("/api/admin", adminRouter)
 
-app.get("/api/me", authenticate, (req: AuthRequest, res) => {
-  res.json({ user: req.user })
+// Fix §1.6 — return DB user not JWT payload
+app.get("/api/me", authenticate, async (req: AuthRequest, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { id: true, email: true, name: true, isAdmin: true }
+  })
+  if (!user) return res.status(404).json({ error: "User not found." })
+  res.json({ user })
 })
 
-app.listen(3000, () => console.log("API running on http://localhost:3000"))
+app.get("/health", (_req, res) => res.json({ ok: true }))
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => console.log(`API running on http://localhost:${PORT}`))

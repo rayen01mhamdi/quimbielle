@@ -132,9 +132,6 @@ importers:
 
   packages/pdf:
     dependencies:
-      '@quimbielle/types':
-        specifier: workspace:*
-        version: link:../types
       jspdf:
         specifier: ^2.5.1
         version: 2.5.2
