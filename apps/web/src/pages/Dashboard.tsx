@@ -129,10 +129,20 @@ export default function Dashboard() {
     }
   }, [])
 
-  const exportPDF = () => {
+const exportPDF = async () => {
+  try {
+    const token = localStorage.getItem("token")
+    const settingsRes = await fetch("http://localhost:3000/api/calibration", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const { xOffset, yOffset } = await settingsRes.json()
+    const doc = generateFilledPDF(values, fields, { xOffset: xOffset || 0, yOffset: yOffset || 0 })
+    doc.save("kambiale.pdf")
+  } catch {
     const doc = generateFilledPDF(values, fields)
     doc.save("kambiale.pdf")
   }
+}
 
   const autoLettres = () => {
     const amount = parseFloat(values.montant1)
@@ -183,6 +193,7 @@ export default function Dashboard() {
         <span style={{ flex: 1 }} />
         <button onClick={() => navigate("/history")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>Historique</button>
 <button onClick={() => navigate("/csv")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>CSV</button>
+<button onClick={() => navigate("/calibration")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>🖨 Calibration</button>
         {user?.isAdmin && (
           <button onClick={() => navigate("/admin")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #5b5ef4", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#5b5ef4" }}>Admin</button>
         )}

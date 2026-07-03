@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard"
 import History from "./pages/History"
 import Admin from "./pages/Admin"
 import CsvUpload from "./pages/CsvUpload"
+import Calibration from "./pages/Calibration"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/csv" element={<ProtectedRoute><CsvUpload /></ProtectedRoute>} />
+        <Route path="/calibration" element={<ProtectedRoute><Calibration /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

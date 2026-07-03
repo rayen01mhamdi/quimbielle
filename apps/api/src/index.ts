@@ -5,6 +5,7 @@ import formsRouter from "./routes/forms"
 import adminRouter from "./routes/admin"
 import settingsRouter from "./routes/settings"
 import csvRouter from "./routes/csv"
+import calibrationRouter from "./routes/calibration"
 import { authenticate, AuthRequest } from "./middleware/authenticate"
 import { prisma } from "./lib/prisma"
 
@@ -21,6 +22,7 @@ app.use("/api/forms", formsRouter)
 app.use("/api/admin", adminRouter)
 app.use("/api/settings", settingsRouter)
 app.use("/api/forms/csv", csvRouter)
+app.use("/api/calibration", calibrationRouter)
 // Fix §1.6 — return DB user not JWT payload
 app.get("/api/me", authenticate, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
