@@ -5,6 +5,7 @@ import Register from "./pages/Register"
 import Dashboard from "./pages/Dashboard"
 import History from "./pages/History"
 import Admin from "./pages/Admin"
+import CsvUpload from "./pages/CsvUpload"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+        <Route path="/csv" element={<ProtectedRoute><CsvUpload /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

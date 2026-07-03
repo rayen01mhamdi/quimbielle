@@ -182,6 +182,7 @@ export default function Dashboard() {
         <span style={{ fontWeight: 800, fontSize: 16, color: "#1a1f36" }}>Quim<span style={{ color: "#5b5ef4" }}>bielle</span></span>
         <span style={{ flex: 1 }} />
         <button onClick={() => navigate("/history")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>Historique</button>
+<button onClick={() => navigate("/csv")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #dde2f0", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#4a5580" }}>CSV</button>
         {user?.isAdmin && (
           <button onClick={() => navigate("/admin")} style={{ padding: "6px 14px", background: "transparent", border: "1px solid #5b5ef4", borderRadius: 8, fontSize: 13, cursor: "pointer", color: "#5b5ef4" }}>Admin</button>
         )}
